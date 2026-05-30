@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParquesSeguros - Gestão Técnica Avançada</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+    <nav class="bg-white shadow-xs border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-600 text-white rounded-lg"><i data-lucide="shield-check"></i></div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight text-gray-900 block leading-tight">ParquesSeguros</span>
+                    <span class="text-[10px] text-gray-500 font-medium tracking-wider uppercase">Divisão de Gestão de Equipamentos</span>
+                </div>
+            </div>
+            <button onclick="abrirModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-xl text-sm transition-colors flex items-center gap-2 cursor-pointer shadow-xs">
+                <i data-lucide="plus" class="w-4 h-4"></i> Novo Parque
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Painel de Controlo Técnico</h1>
+                <p class="text-gray-500 mt-1">Conformidade normativa, inventário de brinquedos e ordens de reparação ativa.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-xs flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                    <span class="text-xs font-bold text-gray-600" id="contador-alertas">0 Alertas Críticos</span>
+                </div>
+                <div class="bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-xs flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    <span class="text-xs font-bold text-gray-600" id="contador-parques">Total: 0 Parques</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-3.5"></i>
+                <input type="text" id="pesquisaNome" oninput="filtrarParques()" placeholder="Pesquisar por nome do parque..." class="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:border-blue-500">
+            </div>
+            <div>
+                <select id="filtroEstado" onchange="filtrarParques()" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:border-blue-500">
+                    <option value="Todos">Todos os Estados</option>
+                    <option value="Conforme">🟢 Conforme</option>
+                    <option value="Intervenção">🟡 Requer Intervenção</option>
+                    <option value="Interditado">🔴 Interditado</option>
+                </select>
+            </div>
+            <div>
+                <select id="filtroInspecao" onchange="filtrarParques()" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-hidden focus:border-blue-500">
+                    <option value="Todos">Todas as Inspeções</option>
+                    <option value="Expiradas">⚠️ Inspeções Expiradas</option>
+                    <option value="EmDia">✅ Prazo em Dia</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8" id="parques-container">
+            </div>
+    </main>
+
+    <div id="modalDetalhes" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-gray-100 overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900" id="detalheNome">Nome do Parque</h2>
+                    <p class="text-xs text-gray-500 mt-0.5 flex items-center gap-1"><i data-lucide="map-pin" class="w-3 h-3"></i> <span id="detalheLocalizacao">Localização</span></p>
+                </div>
+                <button onclick="fecharModalDetalhes()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-200 cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-8 flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2"><i data-lucide="layout-grid" class="text-blue-500 w-4 h-4"></i> Inventário de Brinquedos</h3>
+                        <span class="text-xs bg-gray-100 px-2 py-0.5 rounded font-semibold text-gray-600" id="detalheContadorEquip">0 Equipamentos</span>
+                    </div>
+                    
+                    <form id="formEquipamento" onsubmit="adicionarEquipamento(event)" class="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="eqNome" required placeholder="Equipamento (Ex: Baloiço)" class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs w-full">
+                            <input type="text" id="eqMarca" required placeholder="Marca/Fornecedor" class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs w-full">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 items-center">
+                            <select id="eqPiso" class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs w-full">
+                                <option value="Placas Borracha">Placas Borracha</option>
+                                <option value="Borracha Contínua">Borracha Contínua</option>
+                                <option value="Areia Lavada">Areia Lavada</option>
+                                <option value="Relva Natural">Relva Natural</option>
+                            </select>
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1.5 px-3 rounded-lg cursor-pointer transition-colors">Adicionar</button>
+                        </div>
+                    </form>
+
+                    <div id="lista-equipamentos" class="space-y-2 max-h-52 overflow-y-auto"></div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="border-b border-gray-100 pb-2">
+                        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2"><i data-lucide="wrench" class="text-amber-500 w-4 h-4"></i> Ocorrências de Segurança</h3>
+                    </div>
+                    <form id="formAnomalia" onsubmit="adicionarAnomalia(event)" class="bg-gray-50 p-3 rounded-xl border border-gray-200 space-y-2">
+                        <input type="text" id="anomaliaDesc" required placeholder="Descrição da falha física constatada..." class="w-full px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs">
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="anomaliaGravidade" class="px-2.5 py-1.5 bg-white border border-gray-200 rounded-lg text-xs w-full">
+                                <option value="Baixa">🟢 Baixa (Desgaste)</option>
+                                <option value="Média">🟡 Média (Reparação Plazo)</option>
+                                <option value="Crítica">🔴 Crítica (Risco Acidente)</option>
+                            </select>
+                            <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold py-1.5 px-3 rounded-lg cursor-pointer transition-colors">Registar Falha</button>
+                        </div>
+                    </form>
+                    <div id="lista-anomalias" class="space-y-2 max-h-52 overflow-y-auto"></div>
+                </div>
+
+                <div class="md:col-span-2 border-t border-gray-100 pt-6 space-y-4">
+                    <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2"><i data-lucide="clipboard-list" class="text-green-600 w-4 h-4"></i> Executar Nova Vistoria Regular (Checklist Legal)</h3>
+                    <form id="formVistoria" onsubmit="registarVistoria(event)" class="bg-blue-50/50 p-4 rounded-xl border border-blue-100/70 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="space-y-2 text-xs font-medium text-gray-700">
+                            <label class="flex items-center gap-2 bg-white p-2 rounded-lg border border-blue-100"><input type="checkbox" id="checkParafusos" required class="rounded text-blue-600"> Estabilidade e Apertos Ok</label>
+                            <label class="flex items-center gap-2 bg-white p-2 rounded-lg border border-blue-100"><input type="checkbox" id="checkPiso" required class="rounded text-blue-600"> Piso de Impacto Sem Danos</label>
+                            <label class="flex items-center gap-2 bg-white p-2 rounded-lg border border-blue-100"><input type="checkbox" id="checkEstrutura" required class="rounded text-blue-600"> Ausência de Lascas/Corrosão</label>
+                        </div>
+                        <div class="space-y-2">
+                            <input type="text" id="visTecnico" required placeholder="Nome do Inspetor Técnico" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs">
+                            <select id="visTipo" class="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs">
+                                <option value="Visual Prática">Visual de Rotina (Mensal)</option>
+                                <option value="Operacional Trimestral">Operacional (Trimestral)</option>
+                                <option value="Anual Principal">Anual Principal (Certificação)</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col justify-end">
+                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-4 rounded-xl shadow-xs cursor-pointer transition-colors text-center w-full">Assinar e Validar Inspeção</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalFormulario" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2"><i data-lucide="file-text" class="text-blue-600"></i> Registar Parque no Cadastro Municipal</h2>
+                <button onclick="fecharModal()" class="text-gray-400 hover:text-gray-600 cursor-pointer p-1 rounded-lg hover:bg-gray-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="formParque" onsubmit="guardarParque(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Nome da Infraestrutura *</label>
+                    <input type="text" id="nome" required placeholder="Ex: Parque Infantil da Rua Patrão Sérgio" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-hidden">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Ano de Construção *</label>
+                        <input type="number" id="ano" required min="2000" max="2026" value="2026" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-hidden">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Coordenadas de GPS / Rua *</label>
+                        <input type="text" id="localizacao" required placeholder="Ex: Rua Patrão Sérgio, Póvoa de Varzim" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-hidden">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Fabricante Geral *</label>
+                        <input type="text" id="fornecedor" required placeholder="Ex: Play板块 S.A." class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-hidden">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Estado Operacional Inicial *</label>
+                        <select id="estado" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-hidden">
+                            <option value="Conforme">🟢 Conforme</option>
+                            <option value="Intervenção">🟡 Requer Intervenção</option>
+                            <option value="Interditado">🔴 Interditado</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Foto Panorâmica (Link URL)</label>
+                    <input type="url" id="foto" placeholder="Deixe em branco para usar imagem de satélite padrão" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-hidden">
+                </div>
+                <div class="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+                    <button type="button" onclick="fecharModal()" class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 cursor-pointer">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-5 rounded-xl text-sm cursor-pointer shadow-xs">Inserir no Sistema</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const IMAGEM_PADRAO = "https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&w=800&q=80";
+        
+        // Simulação da Base de Dados com todas as novas tabelas interligadas
+        const dadosIniciais = [
+            {
+                id: 1,
+                nome: "Parque Infantil da Rua Patrão Sérgio",
+                localizacao: "Rua Patrão Sérgio, Póvoa de Varzim",
+                anoConstrucao: 2022,
+                fornecedor: "Play板块 Portugal S.A.",
+                fotoCapa: IMAGEM_PADRAO,
+                estadoGeral: "Intervenção",
+                dataUltimaInspecaoISO: "2026-02-15", // Data formato computável
+                inspecoes: [
+                    { data: "15 de Fevereiro de 2026", tipo: "Operacional Trimestral", tecnico: "Eng.º Carlos Silva" }
+                ],
+                equipamentos: [
+                    { id: 11, nome: "Baloiço Duplo Metálico", marca: "Play板块", piso: "Placas Borracha" },
+                    { id: 12, nome: "Torre de Escalada com Escorrega", marca: "Hags", piso: "Borracha Contínua" }
+                ],
+                anomalias: [
+                    { id: 21, descricao: "Fixações da sapata do baloiço com folga mecânica evidente", gravidade: "Crítica", resolvida: false }
+                ]
+            }
+        ];
+
+        let parquesDB = JSON.parse(localStorage.getItem('parques_v4_master')) || dadosIniciais;
+        let parqueAtivoId = null;
+
+        // Cálculos e Alertas Automáticos de prazos de validade das vistorias (Prazo legal: 90 dias para operacional)
+        function calcularEstadoInspecao(dataISO) {
+            const dataUltima = new Date(dataISO);
+            const hoje = new Date("2026-05-29"); // Mantendo a consistência com o ano de 2026
+            const diferencaDias = Math.floor((hoje - dataUltima) / (1000 * 60 * 60 * 24));
+            const diasRestantes = 90 - diferencaDias;
+            return { expirada: diasRestantes <= 0, dias: diasRestantes };
+        }
+
+        function renderizarParques() {
+            const container = document.getElementById('parques-container');
+            container.innerHTML = '';
+            let alertasCriticos = 0;
+
+            const nomeFiltro = document.getElementById('pesquisaNome').value.toLowerCase();
+            const estadoFiltro = document.getElementById('filtroEstado').value;
+            const inspecFiltro = document.getElementById('filtroInspecao').value;
+
+            parquesDB.forEach(parque => {
+                const infoInsp = calcularEstadoInspecao(parque.dataUltimaInspecaoISO);
+                const anomaliasAtivas = (parque.anomalias || []).filter(a => !a.resolvida);
+                if (anomaliasAtivas.some(a => a.gravidade === 'Crítica')) alertasCriticos++;
+
+                // Lógica dos filtros combinados
+                if (nomeFiltro && !parque.nome.toLowerCase().includes(nomeFiltro)) return;
+                if (estadoFiltro !== 'Todos' && parque.estadoGeral !== estadoFiltro) return;
+                if (inspecFiltro === 'Expiradas' && !infoInsp.expirada) return;
+                if (inspecFiltro === 'EmDia' && infoInsp.expirada) return;
+
+                const cartaoHTML = `
+                    <div class="bg-white rounded-2xl shadow-xs border border-gray-200 overflow-hidden relative flex flex-col justify-between">
+                        <div>
+                            <div class="relative h-48 bg-gray-100">
+                                <img src="${parque.fotoCapa || IMAGEM_PADRAO}" alt="${parque.nome}" class="w-full h-full object-cover">
+                                <div class="absolute top-4 right-4 flex flex-col items-end gap-2">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold ${parque.estadoGeral === 'Conforme' ? 'bg-green-100 text-green-800' : parque.estadoGeral === 'Intervenção' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}">${parque.estadoGeral === 'Conforme' ? '🟢 Conforme' : parque.estadoGeral === 'Intervenção' ? '🟡 Intervenção' : '🔴 Interditado'}</span>
+                                    ${infoInsp.expirada ? '<span class="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm animate-pulse">⚠️ INSPEÇÃO EXPIRADA</span>' : `<span class="bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-lg">✅ Vistoria em dia (${infoInsp.dias}d)</span>`}
+                                </div>
+                                <button onclick="eliminarParque(${parque.id})" class="absolute top-4 left-4 bg-white/90 hover:bg-red-600 hover:text-white text-gray-500 p-2 rounded-xl transition-colors shadow-xs cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
+
+                            <div class="p-6">
+                                <div class="mb-4">
+                                    <h2 class="text-xl font-bold text-gray-900 leading-tight">${parque.nome}</h2>
+                                    <div class="flex items-center justify-between mt-2">
+                                        <p class="text-xs text-gray-400 flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> ${parque.localizacao}</p>
+                                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parque.localizacao)}" target="_blank" class="text-blue-600 hover:text-blue-800 text-xs font-semibold flex items-center gap-1"><i data-lucide="navigation" class="w-3 h-3"></i> Rota GPS</a>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-2 text-center mb-4">
+                                    <div class="bg-gray-50 p-2 rounded-xl border border-gray-100"><span class="block text-[9px] font-bold text-gray-400 uppercase">Equipamentos</span><span class="text-sm font-bold text-gray-700">${(parque.equipamentos || []).length}</span></div>
+                                    <div class="bg-gray-50 p-2 rounded-xl border border-gray-100"><span class="block text-[9px] font-bold text-gray-400 uppercase">Falhas Ativas</span><span class="text-sm font-bold text-red-600">${anomaliasAtivas.length}</span></div>
+                                    <div class="bg-gray-50 p-2 rounded-xl border border-gray-100"><span class="block text-[9px] font-bold text-gray-400 uppercase">Ano Instalação</span><span class="text-sm font-bold text-gray-700">${parque.anoConstrucao}</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="px-6 pb-6">
+                            <button onclick="abrirDetalhes(${parque.id})" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"><i data-lucide="sliders" class="w-4 h-4"></i> Abrir D.I. e Operações</button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cartaoHTML;
+            });
+
+            document.getElementById('contador-parques').innerText = `Total: ${parquesDB.length} Parques`;
+            document.getElementById('contador-alertas').innerText = `${alertasCriticos} Parques Críticos`;
+            lucide.createIcons();
+        }
+
+        // CONTROLOS DO MODAL DE FICHA TÉCNICA AVANÇADA
+        function abrirDetalhes(id) {
+            parqueAtivoId = id;
+            const parque = parquesDB.find(p => p.id === id);
+            if (!parque) return;
+
+            document.getElementById('detalheNome').innerText = parque.nome;
+            document.getElementById('detalheLocalizacao').innerText = parque.localizacao;
+            document.getElementById('detalheContadorEquip').innerText = `${(parque.equipamentos || []).length} Equipamentos`;
+
+            renderizarSubTabelas(parque);
+            document.getElementById('modalDetalhes').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function renderizarSubTabelas(parque) {
+            // Desenhar Brinquedos
+            const divEquip = document.getElementById('lista-equipamentos');
+            divEquip.innerHTML = (parque.equipamentos || []).length === 0 ? '<p class="text-xs text-gray-400 py-2">Sem equipamentos cadastrados.</p>' : '';
+            (parque.equipamentos || []).forEach(eq => {
+                divEquip.innerHTML += `
+                    <div class="p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs flex justify-between items-center">
+                        <div><strong class="text-gray-800">${eq.nome}</strong> <span class="text-gray-400">(${eq.marca})</span><span class="block text-[10px] text-blue-600 font-semibold mt-0.5">Piso: ${eq.piso}</span></div>
+                        <button onclick="removerEquipamento(${eq.id})" class="text-gray-400 hover:text-red-600 cursor-pointer"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                `;
+            });
+
+            // Desenhar Ocorrências
+            const divAnom = document.getElementById('lista-anomalias');
+            divAnom.innerHTML = (parque.anomalias || []).length === 0 ? '<p class="text-xs text-gray-400 py-2">Sem anomalias registadas.</p>' : '';
+            (parque.anomalias || []).forEach(an => {
+                divAnom.innerHTML += `
+                    <div class="p-2.5 border rounded-xl text-xs flex justify-between items-center ${an.resolvida ? 'bg-gray-100/50 border-gray-200 text-gray-400' : 'bg-white border-gray-200 shadow-2xs'}">
+                        <div class="flex-1 pr-2">
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${an.gravidade === 'Crítica' ? 'bg-red-100 text-red-700 animate-pulse' : 'bg-amber-100 text-amber-700'}">${an.gravidade.toUpperCase()}</span>
+                            <p class="font-medium mt-1 ${an.resolvida ? 'line-through' : 'text-gray-700'}">${an.descricao}</p>
+                        </div>
+                        <div class="flex gap-1">
+                            ${!an.resolvida ? `<button onclick="resolverAnomalia(${an.id})" class="p-1 bg-green-50 text-green-700 border border-green-200 rounded-lg cursor-pointer"><i data-lucide="check" class="w-3.5 h-3.5"></i></button>` : ''}
+                            <button onclick="removerAnomalia(${an.id})" class="text-gray-400 hover:text-red-600 cursor-pointer p-1"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        // ADICIONAR BRINQUEDO
+        function adicionarEquipamento(e) {
+            e.preventDefault();
+            const parque = parquesDB.find(p => p.id === parqueAtivoId);
+            if (!parque.equipamentos) parque.equipamentos = [];
+
+            parque.equipamentos.push({
+                id: Date.now(),
+                nome: document.getElementById('eqNome').value,
+                marca: document.getElementById('eqMarca').value,
+                piso: document.getElementById('eqPiso').value
+            });
+
+            atualizarMemoria();
+            renderizarSubTabelas(parque);
+            renderizarParques();
+            document.getElementById('formEquipamento').reset();
+        }
+
+        // REGISTAR ORDEM DE REPARAÇÃO
+        function adicionarAnomalia(e) {
+            e.preventDefault();
+            const parque = parquesDB.find(p => p.id === parqueAtivoId);
+            if (!parque.anomalias) parque.anomalias = [];
+
+            parque.anomalias.push({
+                id: Date.now(),
+                descricao: document.getElementById('anomaliaDesc').value,
+                gravidade: document.getElementById('anomaliaGravidade').value,
+                resolvida: false
+            });
+
+            atualizarMemoria();
+            renderizarSubTabelas(parque);
+            renderizarParques();
+            document.getElementById('formAnomalia').reset();
+        }
+
+        function resolverAnomalia(anomaliaId) {
+            const parque = parquesDB.find(p => p.id === parqueAtivoId);
+            const an = parque.anomalias.find(a => a.id === anomaliaId);
+            if (an) an.resolvida = true;
+            atualizarMemoria(); renderizarSubTabelas(parque); renderizarParques();
+        }
+
+        function removerAnomalia(anomaliaId) {
+            const parque = parquesDB.find(p => p.id === parqueAtivoId);
+            parque.anomalias = parque.anomalias.filter(a => a.id !== anomaliaId);
+            atualizarMemoria(); renderizarSubTabelas(parque); renderizarParques();
+        }
+
+        function removerEquipamento(eqId) {
+            const parque = parquesDB.find(p => p.id === parqueAtivoId);
+            parque.equipamentos = parque.equipamentos.filter(e => e.id !== eqId);
+            atualizarMemoria(); renderizarSubTabelas(parque); renderizarParques();
+        }
+
+        // ASSINAR E EMITIR INSPEÇÃO (CONFORME CHECKLIST)
+        function registarVistoria(e) {
+            e.preventDefault();
+            const parque = parquesDB.find(p => p.id === parqueAtivoId);
+            
+            // Definir data da vistoria como o dia de hoje em 2026
+            parque.dataUltimaInspecaoISO = "2026-05-29";
+            
+            if(!parque.inspecoes) parque.inspecoes = [];
+            parque.inspecoes.unshift({
+                data: "29 de Maio de 2026",
+                tipo: document.getElementById('visTipo').value,
+                tecnico: document.getElementById('visTecnico').value
+            });
+
+            parque.estadoGeral = "Conforme"; // Uma vistoria sem falhas novas valida o parque
+            
+            atualizarMemoria();
+            renderizarParques();
+            fecharModalDetalhes();
+            alert("Relatório de inspeção gravado e assinado digitalmente com sucesso!");
+        }
+
+        // FUNÇÕES GERAIS DE ADMINISTRAÇÃO
+        function guardarParque(e) {
+            e.preventDefault();
+            const novo = {
+                id: Date.now(),
+                nome: document.getElementById('nome').value,
+                localizacao: document.getElementById('localizacao').value,
+                anoConstrucao: parseInt(document.getElementById('ano').value),
+                fornecedor: document.getElementById('fornecedor').value,
+                fotoCapa: document.getElementById('foto').value || IMAGEM_PADRAO,
+                estadoGeral: document.getElementById('estado').value,
+                dataUltimaInspecaoISO: "2026-05-29",
+                inspecoes: [{ data: "29 de Maio de 2026", tipo: "Instalação Inicial", tecnico: "Serviços Técnicos" }],
+                equipamentos: [],
+                anomalias: []
+            };
+            parquesDB.push(novo);
+            atualizarMemoria(); renderizarParques(); fecharModal();
+        }
+
+        function eliminarParque(id) {
+            if (confirm("Tem a certeza que deseja eliminar esta infraestrutura do cadastro municipal?")) {
+                parquesDB = parquesDB.filter(p => p.id !== id);
+                atualizarMemoria(); renderizarParques();
+            }
+        }
+
+        function filtrarParques() { renderizarParques(); }
+        function atualizarMemoria() { localStorage.setItem('parques_v4_master', JSON.stringify(parquesDB)); }
+        function abrirModal() { document.getElementById('modalFormulario').classList.remove('hidden'); }
+        function fecharModal() { document.getElementById('modalFormulario').classList.add('hidden'); document.getElementById('formParque').reset(); }
+        function fecharModalDetalhes() { document.getElementById('modalDetalhes').classList.add('hidden'); document.getElementById('formVistoria').reset(); }
+
+        window.onload = renderizarParques;
+    </script>
+</body>
+</html>
